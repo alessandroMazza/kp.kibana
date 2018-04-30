@@ -1,0 +1,38 @@
+.KpToolbar.leftJustify {
+    justify-content: left;
+    margin-bottom: 4vh;
+    margin-top: 4vh;
+    height: 8vh;
+}
+
+
+.menuAnchor{
+   margin-left: 12vw;
+   height:65vh;
+   width:65vw;
+}
+
+
+.tooltip {
+    position: relative;
+    display: inline-block;
+    border-bottom: 1px dotted black;
+}
+
+.tooltip .tooltiptext {
+    display: none;
+    width: 160px;
+    background-color: black;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 0.5vh 0;
+
+    /* Position the tooltip */
+    position: absolute;
+    z-index: 1;
+    margin-top: 4vh;
+}
+
+.tooltip:hover .tooltiptext {
+   display: block;}

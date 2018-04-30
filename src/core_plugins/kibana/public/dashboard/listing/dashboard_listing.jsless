@@ -1,0 +1,443 @@
+import { SavedObjectRegistryProvider } from 'ui/saved_objects/saved_object_registry';
+import 'ui/pager_control';
+import 'ui/pager';
+import { DashboardConstants, createDashboardEditUrl } from '../dashboard_constants';
+import { SortableProperties } from '@elastic/eui';
+import { ConfirmationButtonTypes } from 'ui/modals';
+import { DashboardTable } from './dashboard_listing_menù/menù';
+
+
+                                        
+export function DashboardListingController($injector, $scope, $location, $rootScope, $route, $routeParams, $compile) {
+
+  const $filter = $injector.get('$filter');
+  const confirmModal = $injector.get('confirmModal');
+  const Notifier = $injector.get('Notifier');
+  const pagerFactory = $injector.get('pagerFactory');
+  const Private = $injector.get('Private');
+  const timefilter = $injector.get('timefilter');
+  const config = $injector.get('config');
+  const dashboardConfig = $injector.get('dashboardConfig');
+  const kbnUrl = $injector.get('kbnUrl');
+
+  timefilter.disableAutoRefreshSelector();
+  timefilter.disableTimeRangeSelector();
+  
+  var DashboardListingControllerThat = this;
+
+//KP parser and grouper
+
+//Navigation list function
+
+//To be modified in order to decide landing page.
+function groupGroups(groupList, sep, pos){
+          var navigationList = [];
+          for (var gl = 0; gl < groupList.length; gl++){
+             navigationList.push([groupList[gl][0][0].split(sep)[pos], groupList[gl][0][2]]);
+           }
+        return(navigationList);
+        }
+
+//End of Navigation list function
+
+function stringify(array){
+	if(Array.isArray(array)){
+		for(var l = 0; l < array.length; l++){
+			array[l] = String(array[l]) 
+			}
+		}
+    else{
+		array = String(array);
+		}
+	return(array);
+	}
+
+
+function uniques(array){
+    function onlyUnique(value, index, self) { 
+        return self.indexOf(value) === index;
+    }
+  return(array.filter(onlyUnique));
+}
+
+
+function attributes(items, attribute){
+	if(Array.isArray(items) && typeof(attribute) == "string"){
+	    var attributeList = [];
+	    for(var i = 0; i < items.length; i++){	    
+		    attributeList.push(items[i][attribute]);
+                 ;
+		}
+                if(attributeList.length >0){
+		return(attributeList)
+               }
+                else{ 
+                     return(false)
+                     } 
+	  }
+	else{alert("Passed a non array-like argument or attribute description must be of type string")}
+	}
+
+
+function grouperTitles(titleList,sep){
+  function checkIfAllIs(list, type){
+	function testElement(arrayElement){
+		if(typeof(arrayElement) == type)
+		{ return(true)} 
+		else 
+		{return(false)}
+	    };
+	
+    if (Array.isArray(list) && typeof(type) == "string"){
+       return(list.every(testElement, type)); 
+       }
+	else{alert("Passed a non array-like argument or specified invalid type")}
+ };
+ 
+function splitParserCorrecter(splitString, sep){
+	var splitted = splitString.split(sep);
+	if (splitted.length > 1){
+		return (splitted[0]);
+	   }
+	else{
+		return(null);
+		}
+	}
+	
+Array.prototype.clean = function(deleteValue) {
+  for (var i = 0; i < this.length; i++) {
+    if (this[i] == deleteValue) {         
+      this.splice(i, 1);
+      i--;
+    }
+  }
+  return this;
+};
+ 
+function Parser(titleList,sep){
+	if(checkIfAllIs(titleList,"string") && typeof(sep) == "string" ){
+		var splitList = [];
+		for (var i = 0; i < titleList.length; i++){
+			splitList.push(splitParserCorrecter(titleList[i], sep));
+			}
+		var cleanSplitList = splitList.clean(null);
+		var uniquesvar = uniques(cleanSplitList);
+		var Groups = [];
+		var GroupsIDs =[];
+		for(var i = 0; i < uniquesvar.length; i++){
+			Groups.push([]);
+			GroupsIDs.push(uniquesvar[i]);
+			for(var j = 0; j < titleList.length; j++){
+				if(splitParserCorrecter(titleList[j], sep) == uniquesvar[i]){
+					Groups[i].push(titleList[j]);
+					}
+				}
+			}
+		var groupedGroups = [];
+		for(var i = 0; i < Groups.length; i++){
+			groupedGroups.push(Groups[i]);	
+			groupedGroups[i].Group = GroupsIDs[i];
+			}
+		return(groupedGroups);
+		}
+   }
+
+return(Parser(titleList,sep));
+}
+
+
+function crossConcat(args,sep){
+	if( typeof(sep) != "string" ){
+		return(false);
+		}
+	var length = new Array(args.length);
+	if (args.length > 0){
+		for(var i = 0; i < args.length; i++){
+			length[i] = args[i].length;
+			}
+	if (uniques(length).length == 1){
+		if(!Array.isArray(args[0])){
+			for(i = 0; i > args.length; i++){
+				args[i] = [args[i]];
+				}
+			}
+		var reshape = new Array(args.length);
+                var intermediate = [];
+		for (var j = 0; j < args[0].length; j++){
+		  intermediate = [];
+		  for (var k = 0; k < args.length; k++){
+			intermediate.push(args[k][j]);  
+			}
+		  reshape[j] = intermediate;
+		  }
+                 var resh = reshape;
+		 for(i = 0; i < reshape.length; i++){
+			 reshape[i] = reshape[i].join(sep);  
+			 }
+		}
+		return(reshape); 
+		}		
+	  }
+
+function splitter(splitarray,sep){
+  for(var j = 0; j < splitarray.length; j++){
+    for(var i = 0; i < splitarray[j].length; i++){
+      splitarray[j][i] = String(splitarray[j][i]).split(sep);
+     }
+    }
+   return(splitarray);
+   }
+
+function selectFirstSplit(array, position0, position1, sep){
+	var selectedArray = [];
+	if(Array.isArray(array[0])){
+	   for(var i = 0; i < array.length; i++){
+		    selectedArray.push(String(array[i][position0]).split(sep)[position1]);
+                    
+		    }
+	    }
+	else{    DashboardListingControllerThat
+               		selectedArray = String(array[i][position0]).split(sep)[position1];
+		}
+	return (selectedArray)
+	}
+
+function arrayTakePosition(array, position){
+     var arrayRet = [];
+     for (var i = 0; i < array.length; i++){
+       arrayRet.push(array[i][position])
+       }   
+     return(arrayRet) ; 
+     }
+
+
+//END KP parser and grouper
+
+//KP Styler 
+
+this.giveCss = function(){
+     var Elements = document.querySelectorAll(".customSelectTab");
+     Elements.forEach(function(element) {
+         var QueryEl = $(element);
+          QueryEl.css({
+			  "background-color":"#bebebe",
+                          "border":"2px solid red",
+                          "width":"25vw"
+			  });
+		     });
+     };  
+
+
+
+//END KP styler
+ 
+
+  const limitTo = $filter('limitTo');
+  // TODO: Extract this into an external service.
+  const services = Private(SavedObjectRegistryProvider).byLoaderPropertiesName;
+  const dashboardService = services.dashboards;
+  const notify = new Notifier({ location: 'Dashboard' });
+
+  let selectedItems = [];
+  const sortableProperties = new SortableProperties([
+    {
+      name: 'title',
+      getValue: item => item.title.toLowerCase(),
+      isAscending: true,
+    },
+    {
+      name: 'description',
+      getValue: item => item.description.toLowerCase(),
+      isAscending: true
+    }
+  ],
+  'title');
+
+
+
+  const calculateItemsOnPage = () => {
+    
+    var parentThat = this;
+    this.items = sortableProperties.sortItems(this.items);
+    this.pager.setTotalItems(this.items.length);
+    this.pageOfItems = limitTo(this.items, this.pager.pageSize, this.pager.startIndex);
+
+//KP MODIFICATIONS
+
+    this.titleAttributes = [attributes(this.pageOfItems, "title"), attributes(this.pageOfItems, "id"), attributes(this.pageOfItems, "url")];
+    this.groups = splitter(grouperTitles(crossConcat(this.titleAttributes,"separator"),"_"),"separator");
+    this.titlex = selectFirstSplit(arrayTakePosition(this.groups,0), 0, 1, "_");
+    this.navigationList = groupGroups(this.groups, "_",0);    
+
+    this.replaceString = "#/";
+    // KP navigation function
+
+    this.navigateToDashboard = function (dashboardUrl, replaceString){
+             kbnUrl.change(dashboardUrl.replace(replaceString,""));
+       };
+
+    // END KP navigation function
+
+
+
+    //KP Menù
+
+    this.menuGenerator = function(){
+        var tableAttributes = [["id", "navigationTable"], ["border", "0"], ["height","80%"], ["width", "80%"],["border-collapse", "collapse"]];
+        var tableCss =[["borderCollapse","collapse"], ["borderColor", "black"], ["borderWidth", "1px"]]
+        var tableDivCss = [["backgroundColor", "gray"], ["color", "red"], ["width","60%"],["height","60%"],["borderWidth","0.5vw"], ["borderStyle","outset"],["cursor", "pointer"]]
+        
+        var TableDashBoard = new DashboardTable(parentThat.groups.length, 1, "menuAnchor", tableAttributes, tableCss, tableDivCss);
+              TableDashBoard.generateTable();
+              TableDashBoard.setDivStyle(tableDivCss);
+              TableDashBoard.formatButtons();
+              TableDashBoard.setKibanaTitlesAndSetNavigation(false,  TableDashBoard.finalIdList, parentThat.navigationList, parentThat.navigateToDashboard, parentThat.replaceString)
+       } 
+
+//END KP Menù
+
+//END OF KP MODIFICATION
+
+  };
+
+  const fetchItems = () => {
+    this.isFetchingItems = true;
+
+    dashboardService.find(this.filter, config.get('savedObjects:listingLimit'))
+      .then(result => {
+        this.isFetchingItems = false;
+        this.items = result.hits;
+        this.totalItems = result.total;
+        this.showLimitError = result.total > config.get('savedObjects:listingLimit');
+        this.listingLimit = config.get('savedObjects:listingLimit');
+        calculateItemsOnPage();
+      });
+  };
+
+
+  const deselectAll = () => {
+    selectedItems = [];
+  };
+
+  const selectAll = () => {
+    selectedItems = this.pageOfItems.slice(0);
+  };
+
+  this.isFetchingItems = false;
+  this.items = [];
+  this.pageOfItems = [];
+  this.filter = ($location.search()).filter || '';
+
+  this.pager = pagerFactory.create(this.items.length, 20, 1);
+
+  this.hideWriteControls = dashboardConfig.getHideWriteControls();
+
+  $scope.$watch(() => this.filter, () => {
+    deselectAll();
+    fetchItems();
+    $location.search('filter', this.filter);
+  });
+
+
+function selectFirstSplit(array, position0, position1, sep){
+	var selectedArray = [];
+	if(Array.isArray(array[0])){
+	   for(var i = 0; i < array.length; i++){
+		    selectedArray.push(String(array[i][position0]).split(sep)[position1]);
+		    }
+	    }
+	else{
+		selectedArray = String(array[i][position0]).split(sep)[position1];
+		}
+	return (selectedArray)
+	}
+  this.isAscending = (name) => sortableProperties.isAscendingByName(name);
+  this.getSortedProperty = () => sortableProperties.getSortedProperty();
+
+  this.sortOn = function sortOn(propertyName) {
+    sortableProperties.sortOn(propertyName);
+    deselectAll();
+    calculateItemsOnPage();
+
+  };
+
+  this.toggleAll = function toggleAll() {
+    if (this.areAllItemsChecked()) {
+      deselectAll();
+    } else {
+      selectAll();
+    }
+  };
+
+  this.toggleItem = function toggleItem(item) {
+    if (this.isItemChecked(item)) {
+      const index = selectedItems.indexOf(item);
+      selectedItems.splice(index, 1);
+    } else {
+      selectedItems.push(item);
+    }
+  };
+
+  this.isItemChecked = function isItemChecked(item) {
+    return selectedItems.indexOf(item) !== -1;
+  };
+
+  this.areAllItemsChecked = function areAllItemsChecked() {
+    return this.getSelectedItemsCount() === this.pageOfItems.length;
+  };
+
+  this.getSelectedItemsCount = function getSelectedItemsCount() {
+    return selectedItems.length;
+  };
+
+
+  this.deleteSelectedItems = function deleteSelectedItems() {
+    const doDelete = () => {
+      const selectedIds = selectedItems.map(item => item.id);
+
+      dashboardService.delete(selectedIds)
+        .then(fetchItems)
+        .then(() => {
+          deselectAll();
+        })
+        .catch(error => notify.error(error));
+    };
+
+    confirmModal(
+      `You can't recover deleted dashboards.`,
+      {
+        confirmButtonText: 'Delete',
+        onConfirm: doDelete,
+        defaultFocusedButton: ConfirmationButtonTypes.CANCEL,
+        title: 'Delete selected dashboards?'
+      });
+  };
+
+  this.onPageNext = () => {
+    deselectAll();
+    this.pager.nextPage();
+    calculateItemsOnPage();
+  };
+
+  this.onPagePrevious = () => {
+    deselectAll();
+    this.pager.previousPage();
+    calculateItemsOnPage();
+
+  };
+
+  this.getUrlForItem = function getUrlForItem(item) {
+    return `#${createDashboardEditUrl(item.id)}`;
+  };
+
+  this.getEditUrlForItem = function getEditUrlForItem(item) {
+    return `#${createDashboardEditUrl(item.id)}?_a=(viewMode:edit)`;
+  };
+
+  this.getCreateDashboardHref = function getCreateDashboardHref() {
+    return `#${DashboardConstants.CREATE_NEW_DASHBOARD_URL}`;
+  };
+
+
+
+}

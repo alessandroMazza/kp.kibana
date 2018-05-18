@@ -64,6 +64,11 @@ export function KbnTopNavControllerProvider($compile) {
       if (menuItem.disableButton()) {
         return false;
       }
+
+      //KP_Log
+      console.log(menuItem)
+      //END_KP 
+
       menuItem.run(menuItem, this);
     }
     // apply the defaults to individual options

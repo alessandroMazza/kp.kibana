@@ -86,6 +86,14 @@ export function FilterBarQueryFilterProvider(Private, $rootScope, getAppState, g
    */
   queryFilter.addFilters = function (filters, global) {
 
+    //KP_Search_For_Filter_Query_Filters 
+    for(var i = 0; i<filters.length;i++){
+        if(filters[i].meta.key === "query"){
+          filters.splice(i, 1);
+        }
+    }
+    // END KP
+
     if (global === undefined) {
       const configDefault = config.get('filters:pinnedByDefault');
 

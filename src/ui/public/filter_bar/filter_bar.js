@@ -468,7 +468,6 @@ module.directive('filterBar', function (Private, Promise, getAppState, fixedFilt
                else{filterElement.meta.fixedFlag = false}
              })
           }
-          console.log(filters)
       }
 
 

@@ -21,7 +21,8 @@ export function getTopNavConfig(dashboardMode, actions, hideWriteControls) {
             getFullScreenConfig(actions[TopNavIds.FULL_SCREEN]),
             getShareConfig(),
             getCloneConfig(actions[TopNavIds.CLONE]),
-            getEditConfig(actions[TopNavIds.ENTER_EDIT_MODE])
+            getEditConfig(actions[TopNavIds.ENTER_EDIT_MODE]),
+            getFollowConfig(actions[TopNavIds.FOLLOW])
           ]
       );
     case DashboardViewMode.EDIT:
@@ -44,6 +45,19 @@ function getFullScreenConfig(action) {
     run: action
   };
 }
+
+// KP_Header_Follow_Mode 
+
+function getFollowConfig(action){
+  return{
+    key:'follow',
+    description:"header follow mode",
+    testId:'dashboardFollowMode',
+    run: action
+  }
+}
+
+//KP_END
 
 /**
  * @returns {kbnTopNavConfig}

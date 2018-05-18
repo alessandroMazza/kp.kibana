@@ -3,6 +3,8 @@
   ng-class="{'dashboard-container-with-margins': model.useMargins}"
 >
 
+
+<div class = "followScrollBarDefault" ng-class="{fixed_wrapper: !followScrollbar, follow_wrapper: followScrollbar}">
   <!-- dashboard navbar link KP modification start-->
   <nav class="navbar-dash-hda navbar navbar-default">
     <div class="container-fluid">
@@ -60,6 +62,11 @@
     ng-if="['lucene', 'kql'].includes(model.query.language)"
   ></filter-bar>
 
+  <!-- Red Separator -->
+  <div class= "red_Spacer"></div>
+</div>
+
+
   <div
     ng-show="getShouldShowEditHelp()"
     class="text-center start-screen"
@@ -84,6 +91,7 @@
   </div>
 
   <dashboard-viewport-provider
+    class = "viewport_Margined"
     get-container-api="getContainerApi"
     get-embeddable-factory="getEmbeddableFactory"
   >

@@ -173,6 +173,11 @@ catch(err){
       const dashboardStateManager = new DashboardStateManager(dash, AppState, dashboardConfig.getHideWriteControls());
        
 //KP_START
+
+// Scope variable for fixed upper section of dashboard
+
+      $scope.followScrollbar = true;
+
 // d-sint: navbar used for navigation between all saved dashboards
 
       var recievedGroups = dashboardNavigationState.getNavState().selectedGroup
@@ -536,6 +541,10 @@ catch(err){
         $scope.kbnTopNav.click('edit');
       };
       const navActions = {};
+      navActions[TopNavIds.FOLLOW] = () => {
+        $scope.followScrollbar = !$scope.followScrollbar;
+        console.log($scope.followScrollbar)
+        return(true);}
       navActions[TopNavIds.FULL_SCREEN] = () =>
         dashboardStateManager.setFullScreenMode(true);
       navActions[TopNavIds.EXIT_EDIT_MODE] = () => onChangeViewMode(DashboardViewMode.VIEW);
@@ -556,7 +565,6 @@ catch(err){
             return id;
           });
         };
-
         showCloneModal(onClone, currentTitle, $rootScope, $compile);
       };
       updateViewMode(dashboardStateManager.getViewMode());
